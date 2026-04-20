@@ -1,8 +1,8 @@
+
+from config import pd
 from config import train_test_split, StandardScaler, OneHotEncoder, ColumnTransformer
 
 def process_data(df):
-    df = df[(df["price"] > 0) & (df["milage"] > 0)]
-    df["car_age"] = 2026 - df["model_year"]
 
     X = df.drop(["price"], axis=1)
     y = df["price"]

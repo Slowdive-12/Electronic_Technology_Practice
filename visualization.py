@@ -1,43 +1,76 @@
-from config import pd, plt, np, os
+import pandas as pd
+import matplotlib.pyplot as plt
+import tkinter as tk
+from tkinter import ttk
 
-def run_visualization(csv_path="used_cars.csv"):
-    if not os.path.exists(csv_path):
-        print("找不到文件！")
-        return
+plt.rcParams['font.sans-serif'] = ['SimHei']
+plt.rcParams['axes.unicode_minus'] = False
 
-    df = pd.read_csv(csv_path)
+# ------------------- 数据可视化图 -------------------
+def plot_price_distribution(df):
+    plt.figure(figsize=(10,6))
+    q = df['price'].quantile(0.99)
+    d = df[df['price'] <= q]
+    plt.hist(d['price'], bins=50, color='skyblue', edgecolor='black')
+    plt.title('二手车价格分布')
+    plt.xlabel('价格')
+    plt.ylabel('数量')
+    plt.grid(alpha=0.3)
+    plt.show(block=True)
 
-    # 清洗
-    df['price'] = df['price'].astype(str).str.replace('$', '').str.replace(',', '').astype(float)
-    df['milage'] = df['milage'].astype(str).str.replace(' mi.', '').str.replace(',', '').astype(float)
+def plot_mile_vs_price(df):
+    plt.figure(figsize=(10,6))
+    q_p = df['price'].quantile(0.99)
+    q_m = df['milage'].quantile(0.99)
+    d = df[(df['price']<=q_p) & (df['milage']<=q_m)]
+    plt.scatter(d['milage'], d['price'], alpha=0.5, c='orange')
+    plt.title('里程 vs 价格')
+    plt.xlabel('里程')
+    plt.ylabel('价格')
+    plt.grid(alpha=0.3)
+    plt.show(block=True)
 
-    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
-    fig.suptitle('二手车市场大数据可视化分析', fontsize=22, fontweight='bold', color='#2c3e50')
+def plot_top_brands(df):
+    plt.figure(figsize=(12,6))
+    top = df['brand'].value_counts().head(10)
+    plt.bar(top.index, top.values, color='lightgreen')
+    plt.title('品牌数量 Top10')
+    plt.xticks(rotation=45, ha='right')
+    plt.grid(alpha=0.3)
+    plt.show(block=True)
 
-    # 1 价格分布
-    axes[0,0].hist(df['price'], bins=50, color='#3498db', edgecolor='white', alpha=0.8)
-    axes[0,0].set_title('二手车售价分布', fontsize=14)
-    axes[0,0].set_xlabel('价格 USD')
-    axes[0,0].grid(alpha=0.3)
+# ------------------- 训练损失曲线 -------------------
+def plot_train_loss(loss_history):
+    plt.figure(figsize=(10,5))
+    plt.plot(range(1, len(loss_history)+1), loss_history, 'b-o')
+    plt.title('训练损失曲线')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.grid(True)
+    plt.show(block=True)
 
-    # 2 品牌TOP10
-    top_brands = df['brand'].value_counts().head(10)
-    axes[0,1].barh(top_brands.index[::-1], top_brands.values[::-1], color=plt.cm.Paired(np.linspace(0,1,10)))
-    axes[0,1].set_title('车源最多十大品牌', fontsize=14)
+# ------------------- GUI界面 -------------------
+def create_visualization_gui(df, loss_history):
+    root = tk.Tk()
+    root.title('二手车数据分析系统')
+    root.geometry('420x350')
 
-    # 3 里程 vs 价格
-    axes[1,0].scatter(df['milage'], df['price'], alpha=0.5, c='#e67e22', s=15)
-    axes[1,0].set_title('里程与价格相关性', fontsize=14)
-    axes[1,0].set_xlim(0, df['milage'].quantile(0.95))
+    ttk.Label(root, text='数据可视化面板', font=('微软雅黑',14,'bold')).pack(pady=10)
 
-    # 4 燃油类型
-    fuel = df['fuel_type'].value_counts()
-    if len(fuel) > 5:
-        fuel = pd.concat([fuel[:5], pd.Series([fuel[5:].sum()], index=['Other'])])
-    axes[1,1].pie(fuel, labels=fuel.index, autopct='%1.1f%%', startangle=140, explode=[0.1]+[0]*(len(fuel)-1))
-    axes[1,1].set_title('燃油类型占比')
+    # 数据可视化按钮
+    ttk.Button(root, text='价格分布', width=25,
+               command=lambda: plot_price_distribution(df)).pack(pady=5)
+    ttk.Button(root, text='里程-价格关系', width=25,
+               command=lambda: plot_mile_vs_price(df)).pack(pady=5)
+    ttk.Button(root, text='热门品牌Top10', width=25,
+               command=lambda: plot_top_brands(df)).pack(pady=5)
 
-    plt.tight_layout(rect=[0,0.03,1,0.95])
-    plt.savefig('car_analysis_report.png', dpi=300)
-    print("可视化图片已保存：car_analysis_report.png")
-    plt.show()
+    ttk.Separator(root, orient='horizontal').pack(fill='x', padx=30, pady=10)
+
+    ttk.Label(root, text='模型训练结果', font=('微软雅黑',14,'bold')).pack(pady=5)
+
+    # 只保留训练损失曲线按钮
+    ttk.Button(root, text='训练损失曲线', width=25,
+               command=lambda: plot_train_loss(loss_history)).pack(pady=5)
+
+    root.mainloop()
