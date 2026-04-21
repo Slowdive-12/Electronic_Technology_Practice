@@ -1,36 +1,63 @@
-from torch.utils.data import Dataset, DataLoader
-import torch
+from typing import Union, Tuple
 import numpy as np
+import scipy.sparse as sp
+from config import pd
 
+class CarDataset:
 
-# 自定义数据集类
-class CarDataset(Dataset):
-    def __init__(self, X, y):
-        # 兼容稀疏矩阵和pandas DataFrame
-        if hasattr(X, "toarray"):
-            self.X = torch.tensor(X.toarray(), dtype=torch.float32)
+    def __init__(self, X: Union[np.ndarray, sp.spmatrix, pd.DataFrame],
+                 y: Union[np.ndarray, list, pd.Series]):
+
+        self.X = self._convert_to_array(X)
+        self.y = self._convert_to_array(y).squeeze()
+
+        if len(self.X) != len(self.y):
+            raise ValueError(f"特征和标签数量不匹配: X有{len(self.X)}条，y有{len(self.y)}条")
+
+    @staticmethod
+    def _convert_to_array(data) -> np.ndarray:
+
+        if hasattr(data, "toarray"):
+            return data.toarray()
+        elif hasattr(data, "values"):
+            return data.values
         else:
-            self.X = torch.tensor(np.array(X), dtype=torch.float32)
+            return np.asarray(data)
 
-        if hasattr(y, "values"):
-            self.y = torch.tensor(y.values, dtype=torch.float32)
-        else:
-            self.y = torch.tensor(np.array(y), dtype=torch.float32)
+    def get_data(self) -> Tuple[np.ndarray, np.ndarray]:
 
-    def __len__(self):
-        return len(self.X)
+        return self.X, self.y
 
-    def __getitem__(self, idx):
-        return self.X[idx], self.y[idx]
+    def get_shape(self) -> Tuple[int, int]:
+
+        return self.X.shape
 
 
-def get_loader(X_train, X_test, y_train, y_test, batch_size=32):
-    # 1. 创建数据集
+def get_data_splits(
+        X_train,
+        X_test,
+        y_train,
+        y_test
+) -> Tuple[Tuple[np.ndarray, np.ndarray], Tuple[np.ndarray, np.ndarray]]:
+
     train_dataset = CarDataset(X_train, y_train)
     test_dataset = CarDataset(X_test, y_test)
 
-    # 2. 创建DataLoader
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    return train_dataset.get_data(), test_dataset.get_data()
 
-    return train_loader, test_loader
+def get_numpy_arrays(
+        X_train,
+        X_test,
+        y_train,
+        y_test
+) -> dict:
+
+    train_X, train_y = CarDataset(X_train, y_train).get_data()
+    test_X, test_y = CarDataset(X_test, y_test).get_data()
+
+    return {
+        'X_train': train_X,
+        'X_test': test_X,
+        'y_train': train_y,
+        'y_test': test_y
+    }
