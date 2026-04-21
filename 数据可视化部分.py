@@ -7,7 +7,6 @@ import os
 plt.rcParams['font.sans-serif'] = ['SimHei']
 plt.rcParams['axes.unicode_minus'] = False
 
-
 def run_visualization(csv_path):
     """
     二手车项目数据可视化核心模块
