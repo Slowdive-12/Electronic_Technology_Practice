@@ -5,7 +5,7 @@ from model import Model#随机森林模型类
 from visualization import run_visualization#数据可视化
 
 # 1. 画图
-run_visualization("used_cars.csv")
+run_visualization()
 
 # 2. 数据处理
 set_seed()
