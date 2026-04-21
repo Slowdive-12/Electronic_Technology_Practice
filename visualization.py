@@ -74,5 +74,4 @@ def create_visualization_gui(df, loss_history):
                command=lambda: plot_train_loss(loss_history)).pack(pady=5)
 
     root.mainloop()
-    
-    def run_visualization():return None
+def run_visualization():return None
