@@ -1,22 +1,36 @@
-from load_data import load_data
-from preprocess import process_data
-from dataset import get_loader
-from model import Model, train_model
-from visualization import create_visualization_gui
+from config import set_seed, r2_score#随机种子和R²评估函数
+from load_data import load_data#用于读取CSV数据
+from preprocess import process_data#特征和数据处理
+from model import Model#随机森林模型类
+from visualization import run_visualization#数据可视化
 
-if __name__ == "__main__":
-    print("加载数据中...")
-    df = load_data()
-    print(f"数据加载完成，共 {len(df)} 条记录")
+# 1. 画图
+run_visualization("used_cars.csv")
 
-    print("\n开始模型训练前处理...")
-    X_train, X_test, y_train, y_test = process_data(df)
-    train_loader, test_loader = get_loader(X_train, X_test, y_train, y_test)
+# 2. 数据处理
+set_seed()
+df = load_data()
+X_train, X_test, y_train, y_test = process_data(df)
 
-    # 训练模型
-    model = Model(X_train.shape[1])
-    loss_history = train_model(model, train_loader, epochs=20, lr=0.001)
+# 3. 构建并训练模型
+print("\n开始训练...")
+model = Model(n_estimators=100, max_depth=15, random_state=42)
+model.fit(X_train, y_train)
+print("训练完成！")
 
-    # 启动可视化界面（只传df和loss_history）
-    print("\n启动可视化界面...")
-    create_visualization_gui(df, loss_history)
+# 4. 模型评估
+print("\n模型评估...")
+mse, r2, y_pred = model.evaluate(X_test, y_test)
+print(f"测试集 MSE: {mse:,.2f}")
+print(f"测试集 R²: {r2:.4f}")
+
+# 5. 特征重要性
+print("\n特征重要性 Top5:")
+importance = model.get_feature_importance()
+top5_idx = importance.argsort()[-5:][::-1]
+for idx in top5_idx:
+    print(f"  特征 {idx}: {importance[idx]:.4f}")
+
+# 6. 保存模型
+model.save_model("car_model.pkl")
+print("\n训练完成！")
