@@ -75,5 +75,4 @@ def create_visualization_gui(df, loss_history):
 
     root.mainloop()
     
-    def run_visualization():
-    return None
+    def run_visualization():return None
