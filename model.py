@@ -1,40 +1,35 @@
-import torch
-import torch.nn as nn
-import torch.optim as optim
-
-class Model(nn.Module):
-    def __init__(self, in_dim):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(in_dim, 64),
-            nn.ReLU(),
-            nn.Linear(64, 32),
-            nn.ReLU(),
-            nn.Linear(32, 1)
+from sklearn.ensemble import RandomForestRegressor#随机森林模型
+from sklearn.metrics import mean_squared_error, r2_score#评估
+import joblib#保存和加载
+#参数
+class Model:
+    def __init__(self, n_estimators=100, max_depth=None, random_state=42):
+        self.model = RandomForestRegressor(
+            n_estimators=n_estimators,#树
+            max_depth=max_depth,#深度
+            random_state=random_state#随机数种子
         )
-
-    def forward(self, x):
-        return self.net(x)
-
-def train_model(model, train_loader, epochs=20, lr=0.001):
-    criterion = nn.MSELoss()
-    opt = optim.Adam(model.parameters(), lr=lr)
-    loss_history = []
-
-    print("\n开始训练...")
-    for epoch in range(epochs):
-        loss_sum = 0
-        for x, y in train_loader:
-            pred = model(x)
-            loss = criterion(pred, y.unsqueeze(1))
-            opt.zero_grad()
-            loss.backward()
-            opt.step()
-            loss_sum += loss.item()
-
-        avg_loss = loss_sum / len(train_loader)
-        loss_history.append(avg_loss)
-        print(f"Epoch {epoch + 1} Loss: {avg_loss:.2f}")
-
-    print("训练完成！")
-    return loss_history
+    #模型训练，数据规律的学习
+    def fit(self, x_train, y_train):
+        self.model.fit(x_train, y_train)
+        return self
+    #预测新数据
+    def predict(self, x):
+        return self.model.predict(x)
+    #评估
+    def evaluate(self, x_test, y_test):
+        y_pred = self.model.predict(x_test)
+        mse = mean_squared_error(y_test, y_pred)
+        r2 = r2_score(y_test, y_pred)
+        return mse, r2, y_pred
+    #特征
+    def get_feature_importance(self):
+        return self.model.feature_importances_
+    #保存模型
+    def save_model(self, path):
+        joblib.dump(self.model, path)
+        print(f"模型已保存至: {path}")
+    #加载模型
+    def load_model(self, path):
+        self.model = joblib.load(path)
+        print(f"模型已加载自: {path}")
