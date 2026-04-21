@@ -1,11 +1,11 @@
 from config import pd
-
+#加载并清洗二手车数据的函数    
 def load_data():
     path = "used_cars.csv"
-    # 去掉dtype参数，让pandas自动解析，后续再手动清洗
+    # 功能：读取原始二车CSV数据，完成数据清洗、过滤与特征计算
     df = pd.read_csv(path)
 
-    # ========== 关键：清洗列，转成数字 ==========
+    # ========== 关键：清洗列，转成数字，关取CSV文件 ==========
     # 1. 清洗price列：去掉$和逗号，转成浮点数
     df["price"] = df["price"].replace(r'[\$,]', '', regex=True)
     df["price"] = pd.to_numeric(df["price"], errors="coerce")  # 转失败的变成NaN
